@@ -1,0 +1,19 @@
+# LSTM Model Configuration
+
+model:
+  input_size: 20  # Number of features: 5 visitor cols + 5 order cols + 1 working_day + 9 weather features (3 locations x 3 weather types)
+  hidden_size: 50
+  num_layers: 2
+  output_size: 1  # Predicting visitor count for one location
+  dropout: 0.2
+
+training:
+  learning_rate: 0.001
+  batch_size: 32
+  num_epochs: 100
+  sequence_length: 7  # Use 7 days of data to predict the next day
+
+data:
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
