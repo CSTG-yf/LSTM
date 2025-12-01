@@ -42,7 +42,10 @@ def predict_next_days(model, last_sequence, scaler, device, num_days=7):
             
             # Update sequence for next prediction
             # Remove first element and add prediction at the end
-            current_sequence = torch.cat([current_sequence[1:], prediction.squeeze()])
+            # Reshape prediction to match the feature dimension
+            pred_feature = torch.zeros(last_sequence.shape[1]).to(device)
+            pred_feature[0] = prediction.squeeze()  # Assuming first column is visitor count
+            current_sequence = torch.cat([current_sequence[1:], pred_feature.unsqueeze(0)], dim=0)
     
     # Inverse transform predictions to original scale
     predictions = np.array(predictions)
@@ -83,13 +86,14 @@ def main():
     print("\nPredictions for the next 7 days:")
     for i, pred in enumerate(predictions):
         date = last_date + timedelta(days=i+1)
-        print(f"{date.strftime('%Y-%m-%d')}: {pred:.2f} visitors")
+        # Round to nearest integer for visitor count
+        print(f"{date.strftime('%Y-%m-%d')}: {round(pred)} visitors")
     
     # Save predictions to file
     pred_dates = [(last_date + timedelta(days=i+1)).strftime('%Y-%m-%d') for i in range(len(predictions))]
     pred_df = pd.DataFrame({
         'date': pred_dates,
-        'predicted_visitors': predictions
+        'predicted_visitors': [round(pred) for pred in predictions]  # Round to nearest integer
     })
     pred_df.to_csv('outputs/predictions.csv', index=False)
     print('\nPredictions saved to outputs/predictions.csv')

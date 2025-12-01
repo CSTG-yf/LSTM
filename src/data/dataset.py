@@ -6,18 +6,19 @@ from sklearn.preprocessing import StandardScaler
 import os
 
 class LSTMDataset(Dataset):
-    def __init__(self, data, seq_length):
+    def __init__(self, data, seq_length, target_col_index=0):
         self.data = data
         self.seq_length = seq_length
+        self.target_col_index = target_col_index
         
     def __len__(self):
         return len(self.data) - self.seq_length
     
     def __getitem__(self, index):
-        # Return a sequence of data and the corresponding target
+        # Return a sequence of data and the corresponding target (only the visitor count)
         return (
             torch.FloatTensor(self.data[index:index+self.seq_length]),
-            torch.FloatTensor(self.data[index+self.seq_length])
+            torch.FloatTensor([self.data[index+self.seq_length, self.target_col_index]])
         )
 
 def load_and_preprocess_data(data_dir):
@@ -119,10 +120,10 @@ def create_data_loaders(data, seq_length, train_ratio, val_ratio, batch_size):
     val_data = data[train_size:train_size + val_size]
     test_data = data[train_size + val_size:]
     
-    # Create datasets
-    train_dataset = LSTMDataset(train_data, seq_length)
-    val_dataset = LSTMDataset(val_data, seq_length)
-    test_dataset = LSTMDataset(test_data, seq_length)
+    # Create datasets (assuming visitor count is the first column, index 0)
+    train_dataset = LSTMDataset(train_data, seq_length, target_col_index=0)
+    val_dataset = LSTMDataset(val_data, seq_length, target_col_index=0)
+    test_dataset = LSTMDataset(test_data, seq_length, target_col_index=0)
     
     # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
