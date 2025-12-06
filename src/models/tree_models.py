@@ -12,6 +12,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch
 
 
 class TreeModelTrainer:
@@ -45,7 +46,7 @@ class TreeModelTrainer:
             return np.expm1(y_transformed)
         return y_transformed
     
-    def train_xgboost(self, X_train, y_train, X_val=None, y_val=None, params=None):
+    def train_xgboost(self, X_train, y_train, X_val=None, y_val=None, params=None, use_gpu=False):
         """
         训练 XGBoost 模型
         
@@ -53,6 +54,7 @@ class TreeModelTrainer:
         X_train, y_train: 训练数据
         X_val, y_val: 验证数据（可选）
         params: 模型参数（可选）
+        use_gpu: 是否使用GPU
         
         返回:
         model: 训练好的模型
@@ -79,6 +81,15 @@ class TreeModelTrainer:
             'n_jobs': -1,
             'verbosity': 0
         }
+        
+        # GPU 配置
+        if use_gpu:
+            if torch.cuda.is_available():
+                print("✓ 检测到GPU: " + torch.cuda.get_device_name(0))
+                default_params['tree_method'] = 'gpu_hist'
+                default_params['gpu_id'] = 0
+            else:
+                print("⚠ 未检测到GPU，将使用CPU训练")
         
         if params:
             default_params.update(params)
@@ -118,7 +129,7 @@ class TreeModelTrainer:
         
         return model
     
-    def train_lightgbm(self, X_train, y_train, X_val=None, y_val=None, params=None):
+    def train_lightgbm(self, X_train, y_train, X_val=None, y_val=None, params=None, use_gpu=False):
         """
         训练 LightGBM 模型
         
@@ -126,6 +137,7 @@ class TreeModelTrainer:
         X_train, y_train: 训练数据
         X_val, y_val: 验证数据（可选）
         params: 模型参数（可选）
+        use_gpu: 是否使用GPU
         
         返回:
         model: 训练好的模型
@@ -153,6 +165,16 @@ class TreeModelTrainer:
             'n_jobs': -1,
             'verbosity': -1
         }
+        
+        # GPU 配置
+        if use_gpu:
+            if torch.cuda.is_available():
+                print("✓ 检测到GPU: " + torch.cuda.get_device_name(0))
+                default_params['device'] = 'gpu'
+                default_params['gpu_platform_id'] = 0
+                default_params['gpu_device_id'] = 0
+            else:
+                print("⚠ 未检测到GPU，将使用CPU训练")
         
         if params:
             default_params.update(params)
@@ -241,13 +263,14 @@ class TreeModelTrainer:
         
         return model
     
-    def train_all_models(self, X_train, y_train, X_val=None, y_val=None):
+    def train_all_models(self, X_train, y_train, X_val=None, y_val=None, use_gpu=False):
         """
         训练所有模型
         
         参数:
         X_train, y_train: 训练数据
         X_val, y_val: 验证数据（可选）
+        use_gpu: 是否使用GPU
         
         返回:
         models: 所有训练好的模型字典
@@ -257,10 +280,10 @@ class TreeModelTrainer:
         print("=" * 50)
         
         # 训练 XGBoost
-        self.train_xgboost(X_train, y_train, X_val, y_val)
+        self.train_xgboost(X_train, y_train, X_val, y_val, use_gpu=use_gpu)
         
         # 训练 LightGBM
-        self.train_lightgbm(X_train, y_train, X_val, y_val)
+        self.train_lightgbm(X_train, y_train, X_val, y_val, use_gpu=use_gpu)
         
         # 训练 Ridge
         self.train_ridge(X_train, y_train, X_val, y_val)

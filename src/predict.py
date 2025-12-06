@@ -185,8 +185,35 @@ def main():
         output_path=args.output
     )
     
+<<<<<<< HEAD
     print("\n预测完成！")
 
+=======
+    # Get the last sequence from the data for prediction
+    seq_length = config['training']['sequence_length']
+    last_sequence = torch.FloatTensor(data[-seq_length:])
+    
+    # Predict next 7 days
+    print('Predicting next 7 days...')
+    predictions = predict_next_days(model, last_sequence, scaler, device, num_days=7)
+    
+    # Print predictions
+    last_date = pd.to_datetime(dates[-1])
+    print("\nPredictions for the next 7 days:")
+    for i, pred in enumerate(predictions):
+        date = last_date + timedelta(days=i+1)
+        # Round to nearest integer for visitor count
+        print(f"{date.strftime('%Y-%m-%d')}: {round(pred)} visitors")
+    
+    # Save predictions to file
+    pred_dates = [(last_date + timedelta(days=i+1)).strftime('%Y-%m-%d') for i in range(len(predictions))]
+    pred_df = pd.DataFrame({
+        'date': pred_dates,
+        'predicted_visitors': [round(pred) for pred in predictions]  # Round to nearest integer
+    })
+    pred_df.to_csv('outputs/predictions.csv', index=False)
+    print('\nPredictions saved to outputs/predictions.csv')
+>>>>>>> 5605b211501a696d6b392e87a0862d98db18b2d5
 
 if __name__ == '__main__':
     main()

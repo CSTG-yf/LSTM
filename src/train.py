@@ -11,6 +11,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import warnings
+import torch
 warnings.filterwarnings('ignore')
 
 from src.data.timeseries_dataset import load_timeseries_data
@@ -25,11 +26,24 @@ def load_config(config_path):
     return config
 
 
-def main():
-    """主训练流程"""
+def main(use_gpu=True):
+    """主训练流程
+    
+    参数:
+    use_gpu: 是否使用GPU训练
+    """
     print("="*70)
     print("小样本线路时序预测 - 树模型集成方案")
     print("="*70)
+    
+    # 检查GPU
+    if use_gpu:
+        if torch.cuda.is_available():
+            print(f"\n✓ 检测到GPU: {torch.cuda.get_device_name(0)}")
+            print(f"  CUDA版本: {torch.version.cuda}")
+        else:
+            print("\n⚠ 未检测到GPU，将使用CPU训练")
+            use_gpu = False
     
     # 1. 加载配置
     config = load_config('configs/model_config.yaml')
@@ -64,9 +78,9 @@ def main():
         use_log_transform=config['training']['use_log_transform']
     )
     
-    # 5. 训练所有模型
+    # 5. 训练所有模型（支持GPU）
     print("\n[4/6] 开始训练模型...")
-    models = trainer.train_all_models(X_train, y_train, X_val, y_val)
+    models = trainer.train_all_models(X_train, y_train, X_val, y_val, use_gpu=use_gpu)
     
     # 6. 创建集成模型
     print("\n[5/6] 创建集成模型...")
